@@ -1,0 +1,77 @@
+# Librerias requeridas
+
+library("siebanxicor")
+library("dplyr")
+library("tidyr")
+
+#Obtenemos el token de conexión de banxico, el siguiente token es un ejemplo no funciona
+setToken("c001adf40bdd772dadasssyy465js99000")
+
+#Asignamos los códigos de las divisas a su ticket para una mejor identificación
+
+PEN <- "SF57875"
+BOB <- "SF57765"
+USD <- "SF57805"
+DOP <- "SF57889"
+COP <- "SF57777" # SE REQUIERE DIVISIÓN ENTRE 1000 POR CÁLCULO DE BANXICO
+EUR <- "SF57923"
+GTQ <- "SF57817"
+CLP <- "SF57773"
+PYG <- "SF57873" # SE REQUIERE DIVISIÓN ENTRE 1000 POR CÁLCULO DE BANXICO
+ARS <- "SF57751"
+
+# Creamos la consulta a banxico, indicando las series que queremos y las fechas que requerimos para este caso
+# la temporalidad es mensual y consideramos un mes anterior a la información de la base de datos que requerimos 
+# convertir (si tenemos datos desde enero 2022, la consulta a banxico será desde diciembre de 2021)
+
+idSeries <- c(PEN,BOB,USD,DOP,COP,EUR,GTQ,CLP,PYG,ARS)
+series <- getSeriesData(idSeries, '2021-12-01','2023-03-31')
+
+#Generamos un dataframe con los datos consultados
+
+df <- as.data.frame(series)
+
+# Dividimos los elementos de la columna "COP Y PYG" entre 1000 para obtener el tipo correcto
+
+df$SF57777.value <- df$SF57777.value / 1000
+df$SF57873.value <- df$SF57873.value / 1000
+
+#Renombramos las columnas del dataframe
+
+df <- rename(df,"PEN"  = SF57875.value)
+df <- rename(df,"BOB"  = SF57765.value)
+df <- rename(df,"USD"  = SF57805.value)
+df <- rename(df,"DOP"  = SF57889.value)
+df <- rename(df,"COP"  = SF57777.value)
+df <- rename(df,"EUR"  = SF57923.value)
+df <- rename(df,"GTQ"  = SF57817.value)
+df <- rename(df,"CLP"  = SF57773.value)
+df <- rename(df,"PYG"  = SF57873.value)
+df <- rename(df,"ARS"  = SF57751.value)
+df <- rename(df,"FECHA"  = SF57889.date)
+
+#Eliminando fechas extras
+
+df <- subset(df, select = -SF57751.date)
+df <- subset(df, select = -SF57765.date)
+df <- subset(df, select = -SF57805.date)
+df <- subset(df, select = -SF57777.date)
+df <- subset(df, select = -SF57923.date)
+df <- subset(df, select = -SF57817.date)
+df <- subset(df, select = -SF57773.date)
+df <- subset(df, select = -SF57873.date)
+df <- subset(df, select = -SF57875.date)
+
+#Pivotear datos para realizar un cruce con la base que queremos convertir
+
+data_pivoted <- pivot_longer(df, cols = c(PEN,BOB,USD,DOP,COP,EUR,GTQ,CLP,PYG,ARS), names_to = "divisa", values_to = "tipo_cambio")
+print(data_pivoted)
+
+#Creamos una columna nueva en el dataframe concatenando la divisa y la fecha
+
+data_pivoted$Cruce_base <- paste(data_pivoted$FECHA, data_pivoted$divisa)
+
+#Guardamos el dataframe como csv en la ruta del directorio
+
+ruta_archivo <- "C:/Users/Descarga_banxico.csv"
+write.csv(data_pivoted, file = ruta_archivo, row.names = FALSE)
