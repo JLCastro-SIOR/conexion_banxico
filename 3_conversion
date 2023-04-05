@@ -1,0 +1,27 @@
+#leemos los dos csv's que hicimos en los primeros códigos
+base1 <- read.csv("C:/Users/.csv")
+base2 <- read.csv("C:/Users/Descarga_banxico.csv")
+
+#Creamos los dataframes para trabajar
+df1 <- as.data.frame(base1)
+df2 <- as.data.frame(base2)
+
+# Hacer un merge por dos columnas con nombres diferentes en cada dataframe, esto es el equivalente a un buscarv de excel con el campo concatenado
+df_combinado <- merge(df1, df2, by.x = "Cruce_tipos", by.y = "Cruce_base", all.x = TRUE)
+
+#Creamos la columna con el monto correcto según el tipo de cambio considera que aquellos datos que ya estan en MXN se quedan igual mientras que 
+#aquellos que estan en otras divisas se multiplican para obtener el monto correcto
+
+df_combinado$monto_correcto <- ifelse(is.na(df_combinado$tipo_cambio), df_combinado$MONTO, df_combinado$MONTO * df_combinado$tipo_cambio)
+
+#Eliminamos columnas de mas
+
+df_combinado <- subset(df_combinado, select = -Cruce_tipos)
+df_combinado <- subset(df_combinado, select = -FECHA)
+df_combinado <- subset(df_combinado, select = -divisa)
+df_combinado <- subset(df_combinado, select = -Table.Names)
+
+
+#Guardamos el archivo como csv final 
+ruta_archivo <- "C:/Users/Database_final.csv"
+write.csv(df_combinado, file = ruta_archivo, row.names = FALSE)
