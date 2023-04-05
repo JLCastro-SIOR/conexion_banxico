@@ -1,0 +1,31 @@
+#Aquí preparamos la base de datos de la que queremos convertir el tipo de cambio (MXN en este ejemplo), contiene campos de fecha, monto, ticket de divisa
+
+#Libreria requerida para trabajar fechas
+
+library(lubridate) 
+
+#leemos el csv que contiene los datos a convertir
+
+datos <- read.csv("C:/Users/ingresos.csv")
+
+#creamos el dataframe para trabajar
+
+df <- as.data.frame(datos)
+
+#convertimos el campo donde esta la fecha a un tipo date
+
+df$FECHA_PAGO <- as.Date(df$FECHA_PAGO, format = "%d/%m/%Y")
+
+#class(df$FECHA_PAGO) #esta función verifica que hizo la conversión correcta
+
+#creamos una nueva columna o campo restando un mes al campo fecha ya que haremos la conversión con el cierre del tipo de cambio del mes anterior
+
+df$fecha_pago_2 <- floor_date(df$FECHA_PAGO %m-% months(1), unit = "month")
+
+#creamos el campo que servira para el cruce con nuestra base de tipos de cambio de banxico del código anterior (concatenado de fecha y divisa)
+
+df$Cruce_tipos <- paste(df$fecha_pago_2, df$MONEDA)
+
+#Guardamos el nuevo csv
+ruta_archivo <- "C:/Users/Base_para_cruce.csv"
+write.csv(df, file = ruta_archivo, row.names = FALSE)
